@@ -1,25 +1,22 @@
 import * as Koa from 'koa';
 
+const proxy = require('koa-proxies');
+
 const app = new Koa();
 
-async function delay(fn: () => void, timeout: number): Promise<void> {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            fn();
-            resolve()
-        }, timeout)
-    })
-}
-
-app.use(async ctx => {
-    const requestTime = Date.now();
-    await delay(() => {
-        const responseTime = Date.now();
-        ctx.body = `Hello, Koa (${requestTime} -> ${responseTime})`;
-    }, 1000);
-});
+app.use(proxy('/me', {
+  target: 'https://api.github.com/users',
+  changeOrigin: true,
+  // agent: new httpsProxyAgent('http://1.2.3.4:88'), // if you need or just delete this line
+  secure: false,
+  rewrite: (path: string) => {
+    console.log("### path", path);
+    return path.replace(/^\/me$/, '/freewind')
+  },
+  logs: true
+}))
 
 app.listen(3000, () => {
-    console.log('http://localhost:3000');
+  console.log('http://localhost:3000/me');
 });
 
